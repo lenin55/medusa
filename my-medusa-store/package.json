@@ -22,16 +22,22 @@
     "test:unit": "TEST_TYPE=unit NODE_OPTIONS=--experimental-vm-modules jest --silent --runInBand --forceExit"
   },
   "dependencies": {
+    "@hookform/resolvers": "^3.3.4",
     "@medusajs/admin-sdk": "2.6.0",
     "@medusajs/cli": "2.6.0",
     "@medusajs/framework": "2.6.0",
     "@medusajs/medusa": "2.6.0",
+    "@medusajs/modules-sdk": "2.6.0",
     "@mikro-orm/core": "6.4.3",
     "@mikro-orm/knex": "6.4.3",
     "@mikro-orm/migrations": "6.4.3",
     "@mikro-orm/postgresql": "6.4.3",
     "awilix": "^8.0.1",
-    "pg": "^8.13.0"
+    "date-fns": "^3.3.1",
+    "medusa-react": "^9.0.7",
+    "pg": "^8.13.0",
+    "uuid": "^11.1.0",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@medusajs/test-utils": "2.6.0",
