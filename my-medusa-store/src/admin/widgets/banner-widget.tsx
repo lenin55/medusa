@@ -1,5 +1,4 @@
 import { CreateForm } from "../components/create-form"
-import { EditForm } from "../components/edit-form"
 import { 
   Container, 
   Table, 
@@ -33,7 +32,6 @@ interface Banner {
 // The widget
 const BannerWidget = () => {
   const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [banners, setBanners] = useState<Banner[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -115,10 +113,10 @@ const BannerWidget = () => {
   // Handle update banner
   const handleUpdateBanner = async (formData: Partial<Banner>) => {
     if (!selectedBanner) return
-
+  
     try {
       const response = await fetch(`/admin/banners/${selectedBanner.id}`, {
-        method: 'POST',
+        method: 'PUT', // Ensure the correct method is used
         headers: {
           'Content-Type': 'application/json',
         },
@@ -129,15 +127,21 @@ const BannerWidget = () => {
         throw new Error(`Error updating banner: ${response.statusText}`)
       }
       
-      // Refresh banners from server to ensure synchronized state
-      fetchBanners()
+      const result = await response.json()
+      const updatedBanner = result.banner
+      
+      // Update the local state by replacing the updated banner
+      setBanners(prev => prev.map(b => 
+        b.id === updatedBanner.id ? updatedBanner : b
+      ))
+      
+      // Reset selected banner
+      setSelectedBanner(null)
       
       toast.success('Banner updated successfully')
     } catch (err) {
       console.error('Failed to update banner:', err)
       toast.error('Failed to update banner')
-    } finally {
-      setIsEditModalOpen(false)
       setSelectedBanner(null)
     }
   }
@@ -169,35 +173,41 @@ const BannerWidget = () => {
   }
 
   // Handle edit button click
-  const handleEditClick = (banner: Banner) => {
-    setSelectedBanner(banner)
-    setIsEditModalOpen(true)
-  }
+  const handleEdit = (banner: Banner) => {
+    setSelectedBanner(banner);
+  };
 
   // Handle toggle active status
   const handleToggleActive = async (banner: Banner) => {
     try {
       const response = await fetch(`/admin/banners/${banner.id}`, {
-        method: 'POST',
+        method: 'PUT', // Changed from POST to PUT
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           is_active: !banner.is_active,
         }),
-      })
+      });
       
       if (!response.ok) {
-        throw new Error(`Error toggling banner status: ${response.statusText}`)
+        throw new Error(`Error toggling banner status: ${response.statusText}`);
       }
       
-      // Refresh banners from server to ensure synchronized state
-      fetchBanners()
+      const result = await response.json();
       
-      toast.success(`Banner ${banner.is_active ? "deactivated" : "activated"} successfully`)
+      // Update the local state after the API call succeeds
+      setBanners(prevBanners => 
+        prevBanners.map(b => b.id === banner.id ? result.banner : b)
+      );
+      
+      // Show success message after state update
+      setTimeout(() => {
+        toast.success(`Banner ${banner.is_active ? "deactivated" : "activated"} successfully`);
+      }, 0);
     } catch (err) {
-      console.error('Failed to toggle banner status:', err)
-      toast.error('Failed to toggle banner status')
+      console.error('Failed to toggle banner status:', err);
+      toast.error('Failed to toggle banner status');
     }
   }
 
@@ -222,18 +232,16 @@ const BannerWidget = () => {
         actions={[
           {
             type: "custom",
-            children: <CreateForm onSave={handleSaveBanner} />,
+            children: (
+              <CreateForm 
+                onSave={handleSaveBanner}
+                isEditing={false}
+              />
+            ),
           },
         ]}
       />
-      {isEditModalOpen && selectedBanner && (
-        <EditForm
-          onSave={handleUpdateBanner}
-          initialData={selectedBanner}
-          isEditing={true}
-          onClose={() => setIsEditModalOpen(false)}
-        />
-      )}
+
       {/* Display the banners */}
       <div className="mt-6 px-6 pb-6">
         {isLoading ? (
@@ -325,15 +333,11 @@ const BannerWidget = () => {
                           </Button>
                         </DropdownMenu.Trigger>
                         <DropdownMenu.Content>
-                          <DropdownMenu.Item 
-                            onClick={() => handleEditClick(banner)}
-                          >
+                          <DropdownMenu.Item onClick={() => handleEdit(banner)}>
                             <PencilSquare className="w-4 h-4 mr-2" />
                             Edit
                           </DropdownMenu.Item>
-                          <DropdownMenu.Item 
-                            onClick={() => handleToggleActive(banner)}
-                          >
+                          <DropdownMenu.Item onClick={() => handleToggleActive(banner)}>
                             {banner.is_active ? (
                               <>
                                 <ExclamationCircle className="w-4 h-4 mr-2" />
@@ -371,6 +375,24 @@ const BannerWidget = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
+      {selectedBanner && (
+        <CreateForm 
+          onSave={handleUpdateBanner}
+          initialData={{
+            id: selectedBanner.id,
+            name: selectedBanner.name,
+            image_url: selectedBanner.image_url,
+            description: selectedBanner.description,
+            is_active: selectedBanner.is_active,
+            link_url: selectedBanner.link_url,
+            valid_from: selectedBanner.valid_from ? new Date(selectedBanner.valid_from) : undefined,
+            valid_until: selectedBanner.valid_until ? new Date(selectedBanner.valid_until) : undefined,
+          }}
+          isEditing={true}
+        />
+      )}
     </Container>
   )
 }

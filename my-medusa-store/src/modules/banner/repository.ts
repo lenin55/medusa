@@ -1,14 +1,26 @@
-import { EntityRepository } from "@mikro-orm/postgresql"
-import { Banner } from "./models/banner"
+import { EntityRepository } from "@mikro-orm/postgresql";
+import Banner from "./models/banner";
 
-export class BannerRepository extends EntityRepository<Banner> {
-  async persistAndFlush(entity: Banner): Promise<void> {
-    await this.persist(entity);
-    await this.flush();
+// Define the interface for Banner entity type
+interface BannerEntity {
+  id: string;
+  name: string;
+  image_url: string;
+  description?: string;
+  is_active: boolean;
+  link_url?: string;
+  valid_from?: Date;
+  valid_until?: Date;
+}
+
+export class BannerRepository extends EntityRepository<BannerEntity> {
+  async persistAndFlush(entity: BannerEntity): Promise<void> {
+    this.getEntityManager().persist(entity);
+    await this.getEntityManager().flush();
   }
 
-  async removeAndFlush(entity: Banner): Promise<void> {
-    await this.remove(entity);
-    await this.flush();
+  async removeAndFlush(entity: BannerEntity): Promise<void> {
+    this.getEntityManager().remove(entity);
+    await this.getEntityManager().flush();
   }
 }

@@ -38,12 +38,20 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
       description?: string | null
       is_active?: boolean
       link_url?: string | null
-      valid_from?: string | null
-      valid_until?: string | null
+      valid_from?: Date | null
+      valid_until?: Date | null
     }
     
     // Type cast the request body
     const bannerData = req.body as BannerData
+
+    // Convert valid_from and valid_until to Date objects if they are strings
+    if (typeof bannerData.valid_from === 'string') {
+      bannerData.valid_from = new Date(bannerData.valid_from);
+    }
+    if (typeof bannerData.valid_until === 'string') {
+      bannerData.valid_until = new Date(bannerData.valid_until);
+    }
     
     const banner = await bannerService.createBanners(bannerData)
     

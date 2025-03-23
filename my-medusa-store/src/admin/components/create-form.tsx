@@ -1,5 +1,5 @@
 import { Button, FocusModal, Heading, Input, Switch, Label, Text, Toaster, toast } from "@medusajs/ui"
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 
 interface Banner {
   id?: string
@@ -20,6 +20,7 @@ interface CreateFormProps {
 
 export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFormProps) => {
   const [isLoading, setIsLoading] = useState(false)
+  const modalCloseRef = useRef<HTMLButtonElement>(null)
   
   const [formData, setFormData] = useState<Partial<Banner>>(
     initialData || {
@@ -32,6 +33,13 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
       valid_until: undefined,
     }
   )
+  
+  // Reset form data when initialData changes (when editing different banners)
+  useEffect(() => {
+    if (initialData) {
+      setFormData(initialData)
+    }
+  }, [initialData])
   
   const handleChange = (field: keyof Banner, value: any) => {
     setFormData({
@@ -46,17 +54,27 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
     
     try {
       await onSave(formData as any)
+      
+      // Only reset form if not editing (for new banners)
+      if (!isEditing) {
+        setFormData({
+          name: "",
+          image_url: "",
+          description: "",
+          is_active: false,
+          link_url: "",
+          valid_from: undefined,
+          valid_until: undefined,
+        })
+      }
+      
+      // Close the modal after successful save
+      if (modalCloseRef.current) {
+        modalCloseRef.current.click()
+      }
+      
       toast.success(isEditing ? "Banner updated" : "Banner created", {
         description: "The operation was completed successfully."
-      })
-      setFormData({
-        name: "",
-        image_url: "",
-        description: "",
-        is_active: false,
-        link_url: "",
-        valid_from: undefined,
-        valid_until: undefined,
       })
     } catch (error) {
       toast.error("Error occurred", {
@@ -77,15 +95,15 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
         </FocusModal.Trigger>
         <FocusModal.Content>
           <FocusModal.Header>
-            <Heading>{isEditing ? "Edit Banner" : "Create New Banner"}</Heading>
+            <FocusModal.Title>
+              <Heading>{isEditing ? "Edit Banner" : "Create New Banner"}</Heading>
+            </FocusModal.Title>
+            <Text className="text-ui-fg-subtle">
+              {isEditing ? "Edit the details of the banner." : "Fill in the details to create a new banner."}
+            </Text>
           </FocusModal.Header>
           <FocusModal.Body className="flex flex-col items-center overflow-auto">
             <div className="flex w-full max-w-lg flex-col gap-y-8 p-16">
-              <div className="flex flex-col gap-y-1">
-                <Text className="text-ui-fg-subtle">
-                  {isEditing ? "Edit the details of the banner." : "Fill in the details to create a new banner."}
-                </Text>
-              </div>
               <div className="flex flex-col gap-y-2">
                 <Label htmlFor="banner_name" className="text-ui-fg-subtle">
                   Banner Name <span className="text-red-500">*</span>
@@ -154,26 +172,34 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
                   onChange={(e) => handleChange("valid_until", e.target.value ? new Date(e.target.value) : undefined)}
                 />
               </div>
-                <div className="flex items-center">
+              <div className="flex items-center">
                 <Switch
                   checked={formData.is_active}
                   onCheckedChange={(checked) => handleChange("is_active", checked)}
                   aria-label="Active status"
                 />
                 <Text className="ml-2">{formData.is_active ? "Active" : "Deactivated"}</Text>
-                </div>
+              </div>
             </div>
           </FocusModal.Body>
-            <FocusModal.Footer>
+          <FocusModal.Footer>
             <div className="flex w-full justify-end gap-x-2">
               <FocusModal.Close asChild>
-              <Button variant="secondary">Cancel</Button>
+                <Button 
+                  variant="secondary"
+                  ref={modalCloseRef}
+                >
+                  Cancel
+                </Button>
               </FocusModal.Close>
-              <Button onClick={handleSubmit} isLoading={isLoading}>
-              {isEditing ? "Update" : "Create"}
+              <Button 
+                onClick={handleSubmit} 
+                isLoading={isLoading}
+              >
+                {isEditing ? "Update" : "Create"}
               </Button>
             </div>
-            </FocusModal.Footer>
+          </FocusModal.Footer>
         </FocusModal.Content>
       </FocusModal>
     </>

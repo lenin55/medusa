@@ -19,7 +19,7 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   }
 }
 
-export async function POST(req: MedusaRequest, res: MedusaResponse) {
+export async function PUT(req: MedusaRequest, res: MedusaResponse) {
   const bannerId = req.params.id
   
   try {
@@ -42,7 +42,6 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
     
     // Update the banner - pass first the filter, then the data
     const banner = await bannerService.updateBanners({ id: bannerId }, bannerData)
-
     res.json({ banner })
   } catch (error) {
     res.status(500).json({ 
