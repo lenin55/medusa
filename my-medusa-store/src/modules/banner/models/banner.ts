@@ -1,15 +1,15 @@
-// This is a simplified version of the Banner model that doesn't rely on MikroORM
-// It's used for in-memory storage during development
-export interface Banner {
-  id: string
-  created_at: Date
-  updated_at: Date
-  deleted_at?: Date
-  name: string
-  image_url: string
-  description?: string
-  is_active: boolean
-  link_url?: string
-  valid_from?: Date
-  valid_until?: Date
-}
+import { model } from "@medusajs/framework/utils"
+
+const Banner = model.define("banner", {
+  id: model.id().primaryKey(),
+  name: model.text(),
+  image_url: model.text(),
+  description: model.text().nullable(),
+  is_active: model.boolean().default(false),
+  link_url: model.text().nullable(),
+  valid_from: model.text().nullable(), // Store as ISO string
+  valid_until: model.text().nullable(), // Store as ISO string
+})
+
+export default Banner
+export { Banner }

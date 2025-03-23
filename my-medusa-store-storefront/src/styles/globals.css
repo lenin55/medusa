@@ -19,7 +19,7 @@
 
   input:focus ~ label,
   input:not(:placeholder-shown) ~ label {
-    @apply -translate-y-2 text-xsmall-regular;
+    @apply translate-y-2 text-xsmall-regular;
   }
 
   input:focus ~ label {

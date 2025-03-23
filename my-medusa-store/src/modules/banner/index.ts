@@ -1,26 +1,9 @@
-import { BannerRepository } from "./repository"
-import BannerService from "./service"
+// src/modules/banner/index.ts
+import BannerModuleService from "./service"
+import { Module } from "@medusajs/framework/utils"
 
-// Since Banner is just an interface, we don't export it as an entity
-// Export an empty array for entities since we're using in-memory storage
-export const entities = []
+export const BANNER_MODULE = "banner"
 
-// Default export for service registration
-export default {
-  scope: "bannerModule",
-  register: ({ container }) => {
-    container.register({
-      bannerRepository: asClass(BannerRepository).singleton(),
-      bannerService: asClass(BannerService).singleton(),
-    })
-  },
-}
-
-// Helper functions for DI
-function asClass(Class: any) {
-  return {
-    singleton: () => ({
-      resolve: () => new Class(),
-    }),
-  }
-}
+export default Module(BANNER_MODULE, {
+  service: BannerModuleService,
+})

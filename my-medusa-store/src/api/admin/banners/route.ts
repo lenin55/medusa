@@ -1,19 +1,23 @@
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { Banner } from "../../../modules/banner/models/banner"
-import { getAllBanners, createBanner } from "../../../shared/banner-store"
+import { BANNER_MODULE } from "../../../modules/banner"
+import BannerModuleService from "../../../modules/banner/service"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   try {
+    const bannerService: BannerModuleService = req.scope.resolve(BANNER_MODULE)
+    
     const skip = parseInt(req.query.offset as string) || 0
     const limit = parseInt(req.query.limit as string) || 100
     
-    // Get all banners
-    const allBanners = getAllBanners()
-    
-    // Apply pagination
-    const paginatedBanners = allBanners.slice(skip, skip + limit)
+    const [banners, count] = await bannerService.listAndCountBanners(
+      {},
+      {
+        skip,
+        take: limit,
+      }
+    )
 
-    res.json({ banners: paginatedBanners })
+    res.json({ banners, count })
   } catch (error) {
     res.status(500).json({ 
       message: "Error fetching banners", 
@@ -24,9 +28,25 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 
 export async function POST(req: MedusaRequest, res: MedusaResponse) {
   try {
-    // Cast req.body to the appropriate type
-    const bannerData = req.body as Omit<Banner, "id" | "created_at" | "updated_at">
-    const banner = createBanner(bannerData)
+    const bannerService: BannerModuleService = req.scope.resolve(BANNER_MODULE)
+    
+    // Define the expected banner structure based on the model
+    interface BannerData {
+      id?: string
+      name?: string
+      image_url?: string
+      description?: string | null
+      is_active?: boolean
+      link_url?: string | null
+      valid_from?: string | null
+      valid_until?: string | null
+    }
+    
+    // Type cast the request body
+    const bannerData = req.body as BannerData
+    
+    const banner = await bannerService.createBanners(bannerData)
+    
     res.status(201).json({ banner })
   } catch (error) {
     res.status(500).json({ 

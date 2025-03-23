@@ -1,3 +1,4 @@
+// src/admin/routes/banners/page.tsx
 import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { Photo } from "@medusajs/icons"
 import { Container } from "@medusajs/ui"

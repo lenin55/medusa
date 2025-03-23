@@ -14,31 +14,30 @@ const Hero = async () => {
     console.error("Error displaying banners:", error)
   }
 
-  const activeBanner = banners[0]
-
   return (
     <div className="h-[75vh] w-full border-b border-ui-border-base relative bg-ui-bg-subtle">
-      {activeBanner ? (
+      {banners.length > 0 ? (
         <div className="relative h-full w-full">
-          {/* Use a div with background-image instead of Next.js Image */}
-          <div 
-            className="absolute inset-0 bg-center bg-cover"
-            style={{ backgroundImage: `url(${activeBanner.image_url})` }}
-          />
-          
-          {activeBanner.link_url && (
-            <Link 
-              href={activeBanner.link_url}
-              className="absolute inset-0 z-10"
-              aria-label={activeBanner.name || "Banner link"}
-            />
-          )}
-          
-          {activeBanner.description && (
-            <div className="absolute bottom-0 left-0 right-0 p-4 bg-black bg-opacity-50 text-white">
-              <p>{activeBanner.description}</p>
+          {banners.map((banner) => (
+            <div key={banner.id} className="relative h-full w-full">
+              <div 
+                className="absolute inset-0 bg-center bg-cover"
+                style={{ backgroundImage: `url(${banner.image_url})` }}
+              />
+              {banner.link_url && (
+                <Link 
+                  href={banner.link_url}
+                  className="absolute inset-0 z-10"
+                  aria-label={banner.name || "Banner link"}
+                />
+              )}
+              {banner.description && (
+                <div className="absolute bottom-0 left-0 right-0 p-4 bg-black bg-opacity-50 text-white">
+                  <p>{banner.description}</p>
+                </div>
+              )}
             </div>
-          )}
+          ))}
         </div>
       ) : (
         // Default hero content when no banner is available

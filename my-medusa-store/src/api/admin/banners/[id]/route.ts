@@ -1,16 +1,14 @@
+// src/api/admin/banners/[id]/route.ts
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { Banner } from "../../../../modules/banner/models/banner"
-import { getBanner, updateBanner, deleteBanner } from "../../../../shared/banner-store"
+import { BANNER_MODULE } from "../../../../modules/banner"
+import BannerModuleService from "../../../../modules/banner/service"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   const bannerId = req.params.id
   
   try {
-    const banner = getBanner(bannerId)
-
-    if (!banner) {
-      return res.status(404).json({ message: `Banner with id ${bannerId} not found` })
-    }
+    const bannerService: BannerModuleService = req.scope.resolve(BANNER_MODULE)
+    const banner = await bannerService.retrieveBanner(bannerId)
 
     res.json({ banner })
   } catch (error) {
@@ -25,14 +23,27 @@ export async function POST(req: MedusaRequest, res: MedusaResponse) {
   const bannerId = req.params.id
   
   try {
-    // Cast req.body to Partial<Banner> to fix type error
-    const updatedBanner = updateBanner(bannerId, req.body as Partial<Banner>)
-
-    if (!updatedBanner) {
-      return res.status(404).json({ message: `Banner with id ${bannerId} not found` })
+    const bannerService: BannerModuleService = req.scope.resolve(BANNER_MODULE)
+    
+    // Define the expected banner structure based on the model
+    interface BannerData {
+      id?: string
+      name?: string
+      image_url?: string
+      description?: string | null
+      is_active?: boolean
+      link_url?: string | null
+      valid_from?: string | Date
+      valid_until?: string | Date
     }
+    
+    // Type cast the request body
+    const bannerData = req.body as BannerData
+    
+    // Update the banner - pass first the filter, then the data
+    const banner = await bannerService.updateBanners({ id: bannerId }, bannerData)
 
-    res.json({ banner: updatedBanner })
+    res.json({ banner })
   } catch (error) {
     res.status(500).json({ 
       message: "Error updating banner", 
@@ -45,11 +56,9 @@ export async function DELETE(req: MedusaRequest, res: MedusaResponse) {
   const bannerId = req.params.id
   
   try {
-    const result = deleteBanner(bannerId)
-
-    if (!result) {
-      return res.status(404).json({ message: `Banner with id ${bannerId} not found` })
-    }
+    const bannerService: BannerModuleService = req.scope.resolve(BANNER_MODULE)
+    // Use deleteBanners (plural) instead of deleteBanner
+    await bannerService.deleteBanners([bannerId])
 
     res.status(204).end()
   } catch (error) {

@@ -1,18 +1,21 @@
+// src/api/store/banners/route.ts
 import { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { getActiveBanners } from "../../../shared/banner-store"
+import { BANNER_MODULE } from "../../../modules/banner"
+import BannerModuleService from "../../../modules/banner/service"
 
 export async function GET(req: MedusaRequest, res: MedusaResponse) {
   try {
-    // Get active banners only (those that are active and within valid date range)
-    const activeBanners = getActiveBanners()
+    const bannerService: BannerModuleService = req.scope.resolve(BANNER_MODULE)
+    
+    // Get active banners only
+    const banners = await bannerService.getActiveBanners()
     
     // Set CORS headers to allow requests from your storefront
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
     
-    // Return the banners as JSON
-    res.status(200).json({ banners: activeBanners })
+    res.status(200).json({ banners })
   } catch (error) {
     console.error("Error in /store/banners endpoint:", error)
     res.status(500).json({ 
@@ -22,10 +25,9 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
   }
 }
 
-// Handle OPTIONS requests for CORS preflight
 export async function OPTIONS(req: MedusaRequest, res: MedusaResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
   res.status(200).end()
-}
+} 

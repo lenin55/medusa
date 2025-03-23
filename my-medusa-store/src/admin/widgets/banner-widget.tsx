@@ -1,5 +1,5 @@
-import { defineWidgetConfig } from "@medusajs/admin-sdk"
 import { CreateForm } from "../components/create-form"
+import { EditForm } from "../components/edit-form"
 import { 
   Container, 
   Table, 
@@ -7,7 +7,10 @@ import {
   Button, 
   DropdownMenu,
   Badge,
-  Skeleton
+  Skeleton,
+  Text,
+  Toaster,
+  toast
 } from "@medusajs/ui"
 import { Header } from "../components/Header"
 import { useState, useEffect } from "react"
@@ -102,9 +105,10 @@ const BannerWidget = () => {
       // Refresh banners from server to ensure synchronized state
       fetchBanners()
       
-      console.log("Banner created successfully")
+      toast.success('Banner created successfully')
     } catch (err) {
       console.error('Failed to create banner:', err)
+      toast.error('Failed to create banner')
     }
   }
 
@@ -128,9 +132,10 @@ const BannerWidget = () => {
       // Refresh banners from server to ensure synchronized state
       fetchBanners()
       
-      console.log("Banner updated successfully")
+      toast.success('Banner updated successfully')
     } catch (err) {
       console.error('Failed to update banner:', err)
+      toast.error('Failed to update banner')
     } finally {
       setIsEditModalOpen(false)
       setSelectedBanner(null)
@@ -156,9 +161,10 @@ const BannerWidget = () => {
       // Refresh banners from server to ensure synchronized state
       fetchBanners()
       
-      console.log("Banner deleted successfully")
+      toast.success('Banner deleted successfully')
     } catch (err) {
       console.error('Failed to delete banner:', err)
+      toast.error('Failed to delete banner')
     }
   }
 
@@ -188,9 +194,10 @@ const BannerWidget = () => {
       // Refresh banners from server to ensure synchronized state
       fetchBanners()
       
-      console.log(`Banner ${banner.is_active ? "deactivated" : "activated"} successfully`)
+      toast.success(`Banner ${banner.is_active ? "deactivated" : "activated"} successfully`)
     } catch (err) {
       console.error('Failed to toggle banner status:', err)
+      toast.error('Failed to toggle banner status')
     }
   }
 
@@ -209,6 +216,7 @@ const BannerWidget = () => {
 
   return (
     <Container>
+      <Toaster />
       <Header
         title="Banner Management"
         actions={[
@@ -218,16 +226,14 @@ const BannerWidget = () => {
           },
         ]}
       />
-      
-      {/* Display edit modal when needed */}
       {isEditModalOpen && selectedBanner && (
-        <CreateForm 
-          onSave={handleUpdateBanner} 
+        <EditForm
+          onSave={handleUpdateBanner}
           initialData={selectedBanner}
           isEditing={true}
+          onClose={() => setIsEditModalOpen(false)}
         />
       )}
-      
       {/* Display the banners */}
       <div className="mt-6 px-6 pb-6">
         {isLoading ? (
@@ -281,11 +287,11 @@ const BannerWidget = () => {
                     </Table.Cell>
                     <Table.Cell>
                       <div className="flex flex-col">
-                        <span className="font-medium">{banner.name}</span>
+                        <Text className="font-medium">{banner.name}</Text>
                         {banner.description && (
-                          <span className="text-ui-fg-subtle text-xs line-clamp-2">
+                          <Text className="text-ui-fg-subtle text-xs line-clamp-2">
                             {banner.description}
-                          </span>
+                          </Text>
                         )}
                       </div>
                     </Table.Cell>
@@ -297,17 +303,17 @@ const BannerWidget = () => {
                     <Table.Cell>
                       <div className="flex flex-col text-sm">
                         {banner.valid_from && (
-                          <span>
+                          <Text>
                             From: {format(new Date(banner.valid_from), "MMM d, yyyy")}
-                          </span>
+                          </Text>
                         )}
                         {banner.valid_until && (
-                          <span>
+                          <Text>
                             To: {format(new Date(banner.valid_until), "MMM d, yyyy")}
-                          </span>
+                          </Text>
                         )}
                         {!banner.valid_from && !banner.valid_until && (
-                          <span className="text-ui-fg-subtle">No time limit</span>
+                          <Text className="text-ui-fg-subtle">No time limit</Text>
                         )}
                       </div>
                     </Table.Cell>
@@ -359,19 +365,14 @@ const BannerWidget = () => {
         ) : (
           <div className="flex flex-col items-center justify-center p-4">
             <Heading>No banners yet</Heading>
-            <p className="text-ui-fg-subtle mt-1">
+            <Text className="text-ui-fg-subtle mt-1">
               Create a banner to see it displayed here
-            </p>
+            </Text>
           </div>
         )}
       </div>
     </Container>
   )
 }
-
-// The widget's configurations
-export const config = defineWidgetConfig({
-  zone: "product.details.before",
-})
 
 export default BannerWidget
