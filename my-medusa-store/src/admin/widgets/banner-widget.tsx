@@ -7,14 +7,14 @@ import {
   DropdownMenu,
   Badge,
   Skeleton,
-  Text,
-  Toaster,
-  toast
+  Text
 } from "@medusajs/ui"
 import { Header } from "../components/Header"
 import { useState, useEffect } from "react"
 import { PencilSquare, Trash, Camera, Check, ExclamationCircle } from "@medusajs/icons"
 import { format } from "date-fns"
+import useCustomToast from "../components/useCustomToast"
+import ToastDisplay from "../components/ToastDisplay"
 
 interface Banner {
   id: string
@@ -35,6 +35,7 @@ const BannerWidget = () => {
   const [banners, setBanners] = useState<Banner[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { toasts, success, error: showError, dismissToast } = useCustomToast()
 
   // Fetch banners from API
   const fetchBanners = async () => {
@@ -103,10 +104,11 @@ const BannerWidget = () => {
       // Refresh banners from server to ensure synchronized state
       fetchBanners()
       
-      toast.success('Banner created successfully')
+      // Use our custom toast
+      success('Banner created successfully')
     } catch (err) {
       console.error('Failed to create banner:', err)
-      toast.error('Failed to create banner')
+      showError('Failed to create banner')
     }
   }
 
@@ -115,8 +117,10 @@ const BannerWidget = () => {
     if (!selectedBanner) return
   
     try {
+      console.log("Sending update with data:", formData);
+      
       const response = await fetch(`/admin/banners/${selectedBanner.id}`, {
-        method: 'PUT', // Ensure the correct method is used
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -128,20 +132,38 @@ const BannerWidget = () => {
       }
       
       const result = await response.json()
-      const updatedBanner = result.banner
+      console.log('Update response:', result) // Debug output
       
-      // Update the local state by replacing the updated banner
-      setBanners(prev => prev.map(b => 
-        b.id === updatedBanner.id ? updatedBanner : b
-      ))
+      // Handle different response formats
+      let updatedBanner: Banner | undefined
+      
+      if (result.banner) {
+        // Direct banner object in response
+        updatedBanner = result.banner
+      } else if (Array.isArray(result) && result.length > 0) {
+        // Array of banners (first item)
+        updatedBanner = result[0]
+      } else if (result && typeof result === 'object') {
+        // Maybe it's the banner object directly
+        updatedBanner = result
+      }
+      
+      if (!updatedBanner || !updatedBanner.id) {
+        console.error('Invalid banner data in response:', result)
+        throw new Error('Invalid response format from server')
+      }
+      
+      // Refresh all banners from the server
+      fetchBanners();
       
       // Reset selected banner
       setSelectedBanner(null)
       
-      toast.success('Banner updated successfully')
+      // Use our custom toast
+      success('Banner updated successfully')
     } catch (err) {
       console.error('Failed to update banner:', err)
-      toast.error('Failed to update banner')
+      showError('Failed to update banner')
       setSelectedBanner(null)
     }
   }
@@ -165,23 +187,26 @@ const BannerWidget = () => {
       // Refresh banners from server to ensure synchronized state
       fetchBanners()
       
-      toast.success('Banner deleted successfully')
+      // Use our custom toast
+      success('Banner deleted successfully')
     } catch (err) {
       console.error('Failed to delete banner:', err)
-      toast.error('Failed to delete banner')
+      showError('Failed to delete banner')
     }
   }
 
   // Handle edit button click
   const handleEdit = (banner: Banner) => {
-    setSelectedBanner(banner);
+    setTimeout(() => {
+      setSelectedBanner(banner);
+    }, 0);
   };
 
   // Handle toggle active status
   const handleToggleActive = async (banner: Banner) => {
     try {
       const response = await fetch(`/admin/banners/${banner.id}`, {
-        method: 'PUT', // Changed from POST to PUT
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -195,19 +220,37 @@ const BannerWidget = () => {
       }
       
       const result = await response.json();
+      console.log('Toggle response:', result); // Debug output
+      
+      // Handle different response formats
+      let updatedBanner: Banner | undefined;
+      
+      if (result.banner) {
+        // Direct banner object in response
+        updatedBanner = result.banner;
+      } else if (Array.isArray(result) && result.length > 0) {
+        // Array of banners (first item)
+        updatedBanner = result[0];
+      } else if (result && typeof result === 'object') {
+        // Maybe it's the banner object directly
+        updatedBanner = result;
+      }
+      
+      if (!updatedBanner || !updatedBanner.id) {
+        console.error('Invalid banner data in response:', result);
+        throw new Error('Invalid response format from server');
+      }
       
       // Update the local state after the API call succeeds
       setBanners(prevBanners => 
-        prevBanners.map(b => b.id === banner.id ? result.banner : b)
+        prevBanners.map(b => b.id === banner.id ? updatedBanner! : b)
       );
       
-      // Show success message after state update
-      setTimeout(() => {
-        toast.success(`Banner ${banner.is_active ? "deactivated" : "activated"} successfully`);
-      }, 0);
+      // Use our custom toast
+      success(`Banner ${banner.is_active ? "deactivated" : "activated"} successfully`);
     } catch (err) {
       console.error('Failed to toggle banner status:', err);
-      toast.error('Failed to toggle banner status');
+      showError('Failed to toggle banner status');
     }
   }
 
@@ -226,7 +269,9 @@ const BannerWidget = () => {
 
   return (
     <Container>
-      <Toaster />
+      {/* Add custom toast display */}
+      <ToastDisplay toasts={toasts} onDismiss={dismissToast} />
+      
       <Header
         title="Banner Management"
         actions={[

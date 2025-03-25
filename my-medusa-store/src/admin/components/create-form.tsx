@@ -1,5 +1,7 @@
-import { Button, FocusModal, Heading, Input, Switch, Label, Text, Toaster, toast } from "@medusajs/ui"
+import { Button, FocusModal, Heading, Input, Switch, Label, Text } from "@medusajs/ui"
 import { useState, useEffect, useRef } from "react"
+import useCustomToast from "./useCustomToast"
+import ToastDisplay from "./ToastDisplay"
 
 interface Banner {
   id?: string
@@ -21,6 +23,7 @@ interface CreateFormProps {
 export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFormProps) => {
   const [isLoading, setIsLoading] = useState(false)
   const modalCloseRef = useRef<HTMLButtonElement>(null)
+  const { toasts, success, error: showError, dismissToast } = useCustomToast()
   
   const [formData, setFormData] = useState<Partial<Banner>>(
     initialData || {
@@ -42,10 +45,17 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
   }, [initialData])
   
   const handleChange = (field: keyof Banner, value: any) => {
-    setFormData({
-      ...formData,
-      [field]: value,
-    })
+    if (field === "valid_from" || field === "valid_until") {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        [field]: value ? new Date(value) : undefined,
+      }));
+    } else {
+      setFormData((prevFormData) => ({
+        ...prevFormData,
+        [field]: value,
+      }));
+    }
   }
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -73,13 +83,10 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
         modalCloseRef.current.click()
       }
       
-      toast.success(isEditing ? "Banner updated" : "Banner created", {
-        description: "The operation was completed successfully."
-      })
+      // Use our custom toast instead of Medusa UI toast
+      success(isEditing ? "Banner updated" : "Banner created")
     } catch (error) {
-      toast.error("Error occurred", {
-        description: "Something went wrong. Please try again."
-      })
+      showError("Error occurred. Please try again.")
       console.error(error)
     } finally {
       setIsLoading(false)
@@ -88,7 +95,7 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
   
   return (
     <>
-      <Toaster />
+      <ToastDisplay toasts={toasts} onDismiss={dismissToast} />
       <FocusModal>
         <FocusModal.Trigger asChild>
           <Button variant="secondary">{isEditing ? "Edit Banner" : "Create New Banner"}</Button>
@@ -96,7 +103,7 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
         <FocusModal.Content>
           <FocusModal.Header>
             <FocusModal.Title>
-              <Heading>{isEditing ? "Edit Banner" : "Create New Banner"}</Heading>
+              <Heading level="h2">{isEditing ? "Edit Banner" : "Create New Banner"}</Heading>
             </FocusModal.Title>
             <Text className="text-ui-fg-subtle">
               {isEditing ? "Edit the details of the banner." : "Fill in the details to create a new banner."}
@@ -158,7 +165,7 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
                   id="valid_from"
                   type="date"
                   value={formData.valid_from ? formData.valid_from.toISOString().split('T')[0] : ""}
-                  onChange={(e) => handleChange("valid_from", e.target.value ? new Date(e.target.value) : undefined)}
+                  onChange={(e) => handleChange("valid_from", e.target.value)}
                 />
               </div>
               <div className="flex flex-col gap-y-2">
@@ -169,7 +176,7 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
                   id="valid_until"
                   type="date"
                   value={formData.valid_until ? formData.valid_until.toISOString().split('T')[0] : ""}
-                  onChange={(e) => handleChange("valid_until", e.target.value ? new Date(e.target.value) : undefined)}
+                  onChange={(e) => handleChange("valid_until", e.target.value)}
                 />
               </div>
               <div className="flex items-center">

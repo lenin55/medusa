@@ -3,7 +3,7 @@ import Banner from "./models/banner"
 
 class BannerModuleService extends MedusaService({
   Banner,
-}){
+}) {
   async getActiveBanners() {
     const now = new Date()
     
