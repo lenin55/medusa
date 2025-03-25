@@ -18,12 +18,22 @@ interface CreateFormProps {
   onSave: (data: Omit<Banner, "id" | "created_at" | "updated_at">) => Promise<void>
   initialData?: Banner
   isEditing?: boolean
+  autoOpen?: boolean
+  modalKey?: string
 }
 
-export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFormProps) => {
+export const CreateForm = ({ 
+  onSave, 
+  initialData, 
+  isEditing = false, 
+  autoOpen = false,
+  modalKey = "default" 
+}: CreateFormProps) => {
   const [isLoading, setIsLoading] = useState(false)
-  const modalCloseRef = useRef<HTMLButtonElement>(null)
+  const [isOpen, setIsOpen] = useState(autoOpen)
+  const initialFocusRef = useRef<HTMLInputElement>(null)
   const { toasts, success, error: showError, dismissToast } = useCustomToast()
+  const [showErrors, setShowErrors] = useState(false)
   
   const [formData, setFormData] = useState<Partial<Banner>>(
     initialData || {
@@ -44,6 +54,14 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
     }
   }, [initialData])
   
+  // Auto-open modal when autoOpen prop changes or when modalKey changes
+  useEffect(() => {
+    if (autoOpen) {
+      // Force the modal to open
+      setIsOpen(true)
+    }
+  }, [autoOpen, modalKey])
+  
   const handleChange = (field: keyof Banner, value: any) => {
     if (field === "valid_from" || field === "valid_until") {
       setFormData((prevFormData) => ({
@@ -60,6 +78,15 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Check if mandatory fields are filled
+    if (!formData.name || !formData.image_url) {
+      setShowErrors(true)
+      showError("Please fill in all mandatory fields.")
+      return
+    }
+    setShowErrors(false)
+    
     setIsLoading(true)
     
     try {
@@ -78,12 +105,10 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
         })
       }
       
-      // Close the modal after successful save
-      if (modalCloseRef.current) {
-        modalCloseRef.current.click()
-      }
+      // Close the modal
+      setIsOpen(false)
       
-      // Use our custom toast instead of Medusa UI toast
+      // Use our custom toast
       success(isEditing ? "Banner updated" : "Banner created")
     } catch (error) {
       showError("Error occurred. Please try again.")
@@ -96,14 +121,26 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
   return (
     <>
       <ToastDisplay toasts={toasts} onDismiss={dismissToast} />
-      <FocusModal>
-        <FocusModal.Trigger asChild>
-          <Button variant="secondary">{isEditing ? "Edit Banner" : "Create New Banner"}</Button>
-        </FocusModal.Trigger>
+      
+      {/* For create banner button - only shown when not in edit mode */}
+      {!isEditing && (
+        <Button 
+          variant="secondary"
+          onClick={() => setIsOpen(true)}
+        >
+          Create New Banner
+        </Button>
+      )}
+      
+      {/* Fixed modal implementation to avoid aria-hidden issues */}
+      <FocusModal 
+        open={isOpen} 
+        onOpenChange={setIsOpen}
+      >
         <FocusModal.Content>
           <FocusModal.Header>
             <FocusModal.Title>
-              <Heading level="h2">{isEditing ? "Edit Banner" : "Create New Banner"}</Heading>
+              <Heading>{isEditing ? "Edit Banner" : "Create New Banner"}</Heading>
             </FocusModal.Title>
             <Text className="text-ui-fg-subtle">
               {isEditing ? "Edit the details of the banner." : "Fill in the details to create a new banner."}
@@ -117,11 +154,19 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
                 </Label>
                 <Input
                   id="banner_name"
+                  ref={initialFocusRef}
                   placeholder="Enter banner name"
                   value={formData.name || ""}
                   onChange={(e) => handleChange("name", e.target.value)}
-                  required
+                  aria-invalid={showErrors && !formData.name}
+                  autoFocus
+                  className={showErrors && !formData.name ? "border-red-500" : ""}
                 />
+                {!formData.name && showErrors && (
+                  <Text className="text-ui-fg-error txt-small">
+                    This field is required
+                  </Text>
+                )}
               </div>
               <div className="flex flex-col gap-y-2">
                 <Label htmlFor="image_url" className="text-ui-fg-subtle">
@@ -132,8 +177,14 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
                   placeholder="https://example.com/image.jpg"
                   value={formData.image_url || ""}
                   onChange={(e) => handleChange("image_url", e.target.value)}
-                  required
+                  aria-invalid={showErrors && !formData.image_url}
+                  className={showErrors && !formData.image_url ? "border-red-500" : ""}
                 />
+                {!formData.image_url && showErrors && (
+                  <Text className="text-ui-fg-error txt-small">
+                    This field is required
+                  </Text>
+                )}
               </div>
               <div className="flex flex-col gap-y-2">
                 <Label htmlFor="description" className="text-ui-fg-subtle">
@@ -191,14 +242,12 @@ export const CreateForm = ({ onSave, initialData, isEditing = false }: CreateFor
           </FocusModal.Body>
           <FocusModal.Footer>
             <div className="flex w-full justify-end gap-x-2">
-              <FocusModal.Close asChild>
-                <Button 
-                  variant="secondary"
-                  ref={modalCloseRef}
-                >
-                  Cancel
-                </Button>
-              </FocusModal.Close>
+              <Button 
+                variant="secondary"
+                onClick={() => setIsOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button 
                 onClick={handleSubmit} 
                 isLoading={isLoading}

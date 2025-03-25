@@ -17,7 +17,7 @@ interface HeaderProps {
 export const Header = ({ title, actions }: HeaderProps) => {
   return (
     <div className=" flex justify-between items-center">
-      <Heading level="h1">
+      <Heading>
         {title}
       </Heading>
       
