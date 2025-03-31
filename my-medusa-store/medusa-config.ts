@@ -13,6 +13,18 @@ module.exports = defineConfig({
       cookieSecret: process.env.COOKIE_SECRET || "supersecret",
     }
   },
+  plugins: [
+    {
+      resolve: "@tsc_tech/medusa-plugin-notification-template",
+      options: {
+        // plugin options if any
+      }
+    },
+    {
+      resolve: 'medusa-variant-images',
+      options: {},
+    }
+  ],
   modules: [
     {
       resolve: "./src/modules/banner",

@@ -17,6 +17,7 @@ import { CreateForm } from "../components/create-form"
 import { Header } from "../components/Header"
 import useCustomToast from "../components/useCustomToast"
 import ToastDisplay from "../components/ToastDisplay"
+import { AppWrapper } from "../components/app-wrapper"
 
 interface Banner {
   id: string
@@ -33,7 +34,7 @@ interface Banner {
 
 const columnHelper = createDataTableColumnHelper<Banner>()
 
-const BannerWidget = () => {
+const BannerWidgetContent = () => {
   const [selectedBanner, setSelectedBanner] = useState<Banner | null>(null)
   const [banners, setBanners] = useState<Banner[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -257,7 +258,6 @@ const BannerWidget = () => {
           type: "custom",
           children: <CreateForm onSave={handleSaveBanner} isEditing={false} />,
         }]} />
-
       {error ? (
         <div className="flex flex-col items-center justify-center p-4 text-ui-fg-error">
           <p>{error}</p>
@@ -271,7 +271,6 @@ const BannerWidget = () => {
           <DataTable.Table />
         </DataTable>
       )}
-
       {selectedBanner && (
         <CreateForm
           onSave={async (formData) => {
@@ -289,6 +288,14 @@ const BannerWidget = () => {
         />
       )}
     </Container>
+  )
+}
+
+const BannerWidget = () => {
+  return (
+    <AppWrapper>
+      <BannerWidgetContent />
+    </AppWrapper>
   )
 }
 
